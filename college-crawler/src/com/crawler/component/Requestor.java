@@ -36,7 +36,7 @@ public class Requestor {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return source.toString();
+		return checkLegal(source.toString());
 	}
 	
 	public String postRequest(String url, Map<String, String> map, String encode) {
@@ -56,7 +56,18 @@ public class Requestor {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return source.toString();
+		return checkLegal(source.toString());
+	}
+	
+	/**
+	 * 检查dom是否是合法的，主要应用于parser对于html的头部检查
+	 * @param source
+	 * @return
+	 */
+	public String checkLegal(String source) {
+		if(!source.startsWith("<") && source.indexOf("<") >= 0)
+			source = source.substring(source.indexOf("<"));
+		return source;
 	}
 	
 	private NameValuePair[] map2Pair(Map<String, String> map) {

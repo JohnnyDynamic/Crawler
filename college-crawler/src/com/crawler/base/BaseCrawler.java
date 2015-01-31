@@ -22,15 +22,15 @@ import com.crawler.component.Requestor;
 
 public class BaseCrawler {
 	
+	public String requestSource(String url, Map<String, String> map, String encode) {
+		return new Requestor().postRequest(url, map, encode);
+	}
+	
 	public String requestSource(String url, String encode) {
 		return new Requestor().getRequest(url, encode);
 	}
 	
-	public String createPageURL(String url, int num) {
-		return url.replace("*#*", num+"");
-	}
-	
-	public List<String> requestItemURLFromDom(String source, String itemPattern) {
+	public List<String> getItemURLFromDom(String source, String itemPattern) {
 		Parser parser = new Parser();
 		List<String> res = new ArrayList<String>();
 		try {
@@ -52,10 +52,9 @@ public class BaseCrawler {
 		return res;
 	}
 	
-	public List<String> requestItemURLFromJson(String source, String itemPattern, String itemUrl) {
-		Map<String, Object> map = json2Map(source);
-		System.out.println(map);
-		List<String> res = new ArrayList<String>();
+	public List<Map> parseJson(String json) {
+		Map<String, Object> map = json2Map(json);
+		List<Map> res = new ArrayList<Map>();
 		Iterator<String> it = map.keySet().iterator();
 		while(it.hasNext()) {
 			Object obj = map.get(it.next());
@@ -64,13 +63,17 @@ public class BaseCrawler {
 				List<Object> list = (List<Object>)obj;
 				for(Object ob: list) {
 					if(ob instanceof Map) {
-						String id = (String) ((Map)ob).get(itemPattern);
-						res.add(itemUrl.replace("#*#", id));
+						res.add((Map) ob);
 					}
 				}
 			}
 		}
 		return res;
+	}
+	
+	public String getItemURL(Map map, String itemPattern, String itemUrl) {
+		String id = (String) map.get(itemPattern);
+		return itemUrl.replace("#*#", id);
 	}
 	
 	private Map<String, Object> json2Map(String jsonStr) {
@@ -97,17 +100,18 @@ public class BaseCrawler {
 	}
 	
 	public List<String> parseTextFromDom(String dom) {
+		List<String> res = null;
 		try {
 			Parser parser = new Parser();
 			parser.setResource(dom);
 			HasAttributeFilter filter = new HasAttributeFilter("body"); 
 			NodeList list = parser.extractAllNodesThatMatch(filter);
-			iterateDom(list.elementAt(0), "0");
+			res = iterateDom(list.elementAt(0), "0");
 		} catch (ParserException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return null;
+		return res;
 	}
 	
 	private List<String> iterateDom(Node node, String path) {
@@ -123,7 +127,7 @@ public class BaseCrawler {
 			String text;
 			if(!(text = node.toPlainTextString().trim()).equalsIgnoreCase("")) {
 				res.add(text);
-				System.out.println("##"+path+"## "+text);
+//				System.out.println("##"+path+"## "+text);
 			}
 		}
 		return res;
@@ -135,16 +139,19 @@ public class BaseCrawler {
 	
 	public static void main(String[] args) {
 		BaseCrawler c = new BaseCrawler();
-		String json = c.requestSource("http://career.cic.tsinghua.edu.cn/xsglxt/b/jyxt/anony/queryTodayHdList?rq=2014-12-10&callback=jsonp1422448015533"
+//		String json = c.requestSource("http://career.cic.tsinghua.edu.cn/xsglxt/b/jyxt/anony/queryTodayHdList?rq=2014-12-10&callback=jsonp1422448015533"
+//				, "UTF-8");
+//		//清华，json作特殊处理
+//		json = "{\"rows\":"+json.substring(json.indexOf("["), json.lastIndexOf(")"))+"}";
+//		List<String> list = c.requestItemURLFromJson(json, "zphid", "http://career.cic.tsinghua.edu.cn/xsglxt/f/jyxt/anony/gotoZpxxList?id=#*#");
+//		for(String url: list) {
+//			String dom = c.requestSource(url, "UTF-8");
+//			String link = c.requestItemURLFromDom(dom, "showZwxx").get(0);
+//			String dom2 = c.requestSource("http://career.cic.tsinghua.edu.cn"+link, "UTF-8");
+//			List<String> res = c.parseTextFromDom(dom2);
+//		}
+		String dom2 = c.requestSource("http://job.bupt.edu.cn/career/fairdetail?fairId=f27fa84e49a845dc014a61bcd5bb46ac&fairsType=2"
 				, "UTF-8");
-		//清华，json作特殊处理
-		json = "{\"rows\":"+json.substring(json.indexOf("["), json.lastIndexOf(")"))+"}";
-		List<String> list = c.requestItemURLFromJson(json, "zphid", "http://career.cic.tsinghua.edu.cn/xsglxt/f/jyxt/anony/gotoZpxxList?id=#*#");
-		for(String url: list) {
-			String dom = c.requestSource(url, "UTF-8");
-			String link = c.requestItemURLFromDom(dom, "showZwxx").get(0);
-			String dom2 = c.requestSource("http://career.cic.tsinghua.edu.cn"+link, "UTF-8");
-			List<String> res = c.parseTextFromDom(dom2);
-		}
+		List<String> res = c.parseTextFromDom(dom2);
 	}
 }
